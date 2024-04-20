@@ -6,10 +6,24 @@ namespace sihnalRProject.Hubs
 {
     public class MyHub:Hub
     {
+        static List<string> clients = new List<string>();
         public async Task SendMessageAsync(string message)
         {
             await Clients.All.SendAsync("receiveMessage", message);
             await SendEmailAsync(message);
+        }
+        public override async Task OnConnectedAsync()
+        {
+            clients.Add(Context.ConnectionId);
+            //await Clients.All.SendAsync("Kullanıcı giriş sağladı");// bütün kullanıcılara mesaj atar
+            await Clients.Client(Context.ConnectionId).SendAsync("clientJoin", Context.ConnectionId);// giriş yapan kullanıcıya mesaj gönderir
+            await Clients.All.SendAsync("clientJoin", Context.ConnectionId);
+        }
+        public  override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            clients.Remove(Context.ConnectionId);
+            await Clients.All.SendAsync("clientLeft", Context.ConnectionId);
+           
         }
         public async Task SendEmailAsync(string message)
         {
